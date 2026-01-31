@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クレーンホスト - レバー</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #2c3e50; color: white; touch-action: none; }
+        .controller { display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 10px; justify-content: center; margin-top: 20px; }
+        .btn { width: 80px; height: 80px; font-size: 24px; border-radius: 15px; border: none; background: #34495e; color: white; }
+        #up { grid-area: up; } #down { grid-area: down; } #left { grid-area: left; } #right { grid-area: right; }
+        .push-btn { width: 150px; height: 150px; border-radius: 50%; background: #e74c3c; border: 8px solid #c0392b; color: white; font-size: 24px; font-weight: bold; margin-top: 30px; box-shadow: 0 10px #922b21; }
+        .push-btn:active { box-shadow: 0 2px #922b21; transform: translateY(8px); }
+        .active { background: #1abc9c !important; }
+        input { font-size: 18px; padding: 10px; width: 100px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div id="setup">
+        <input type="text" id="my-code" maxlength="3" placeholder="3文字">
+        <button onclick="startHost()">レバー操作開始</button>
+    </div>
+
+    <div id="display-code" style="font-size: 20px; margin: 10px;"></div>
+
+    <div class="controller">
+        <button id="up" class="btn">↑</button>
+        <button id="left" class="btn">←</button>
+        <button id="right" class="btn">→</button>
+        <button id="down" class="btn">↓</button>
+    </div>
+
+    <button id="action" class="push-btn">PUSH</button>
+
+    <script>
+        let peer, conn;
+        function startHost() {
+            const code = document.getElementById('my-code').value;
+            peer = new Peer('crane-lever-' + code);
+            peer.on('open', () => {
+                document.getElementById('setup').style.display = 'none';
+                document.getElementById('display-code').innerText = "コード: " + code;
+            });
+            peer.on('connection', (c) => {
+                conn = c;
+                setupEvents();
+            });
+        }
+
+        function setupEvents() {
+            const send = (id, act) => conn && conn.send({id, act});
+            ['up', 'down', 'left', 'right', 'action'].forEach(id => {
+                const el = document.getElementById(id);
+                el.ontouchstart = (e) => { e.preventDefault(); el.classList.add('active'); send(id, 'down'); };
+                el.ontouchend = (e) => { e.preventDefault(); el.classList.remove('active'); send(id, 'up'); };
+            });
+        }
+    </script>
+</body>
+</html>
